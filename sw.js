@@ -1,4 +1,4 @@
-const CACHE_NAME = 'emara-pwa-v1';
+const CACHE_NAME = 'Residents';
 const urlsToCache = [
   './',
   './index.html',
