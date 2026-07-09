@@ -1,0 +1,16 @@
+{
+  "name": "نظام إدارة العمارة",
+  "short_name": "إدارة العمارة",
+  "description": "نظام متابعة الشكاوى والمالية والصيانة الخاص بالعمارة",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a202c",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
