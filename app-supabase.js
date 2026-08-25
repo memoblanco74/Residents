@@ -7,8 +7,8 @@
 // ============================================================================
 
 // ---- fill these in from Supabase > Project Settings > API -----------------
-const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const SUPABASE_URL = 'https://faewdbpkfbxzhzdoatus.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZXdkYnBrZmJ4emh6ZG9hdHVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NTQ5MjYsImV4cCI6MjEwMzIzMDkyNn0.VEv9ASCg4kk3UK9u5956s_z3sXHPsBs1Cj7s9YKjIBI';
 // -----------------------------------------------------------------------------
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
