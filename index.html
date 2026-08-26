@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <link rel="icon" href="data:,">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="إدارة العمارة">
     <meta name="theme-color" content="#3b82f6">
     <title data-i18n="appTitle">نظام إدارة العمارة</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -348,6 +351,36 @@
       function filterAccessoryUnits(){var input=document.getElementById('accUnitSearchInput').value; var terms=input.split(',').map(function(x){return x.trim().toLowerCase();}).filter(function(x){return x.length>0;}); ['accPendingTableBody','accDeliveredTableBody'].forEach(function(tbId){var tb=document.getElementById(tbId); if(!tb) return; var trs=tb.getElementsByTagName('tr'); for(var i=0;i<trs.length;i++){var td=trs[i].getElementsByTagName('td')[0]; if(!td) continue; var unitText=(td.textContent||td.innerText).trim().toLowerCase(); if(terms.length===0){trs[i].style.display='';}else{trs[i].style.display=terms.indexOf(unitText)>-1?'':'none';}}}); var badges=document.querySelectorAll('.acc-nr-badge'); badges.forEach(function(b){var t=(b.textContent||b.innerText).trim().toLowerCase(); if(terms.length===0){b.style.display='';}else{b.style.display=terms.indexOf(t)>-1?'':'none';}});}
 
       function deliverAccReq(id, remaining, accessoryName, unit){Swal.fire({title:tr('deliverPrefix')+' '+accessoryName+' - '+tr('unitWord')+' '+unit, html:'<p class="text-sm mb-2">'+tr('remainingToDeliverLabel')+' <b>'+remaining+'</b></p><input id="deliverQty" type="number" min="1" max="'+remaining+'" value="'+remaining+'" class="swal2-input" placeholder="'+tr('actuallyReceivedPh')+'">', showCancelButton:true, confirmButtonText:tr('confirmDeliveryBtn'), cancelButtonText:tr('cancel'), preConfirm:function(){var q=parseInt(document.getElementById('deliverQty').value); if(!q||q<=0){Swal.showValidationMessage(tr('enterValidQty')); return false;} if(q>remaining){Swal.showValidationMessage(tr('qtyGreaterThanRemaining')+remaining+')'); return false;} return q;}}).then(function(r){if(r.isConfirmed){Swal.fire({title:tr('savingLoading'), allowOutsideClick:false, didOpen:function(){Swal.showLoading()}}); google.script.run.withSuccessHandler(function(res){showManageAccessoryRequests(); if(res.remaining>0){Swal.fire({toast:true, position:'top', icon:'success', title:tr('deliveredToastMsg1')+' '+res.delivered+tr('commaSep')+tr('deliveredToastMsg2')+' '+res.remaining+' '+tr('deliveredToastMsg3'), showConfirmButton:false, timer:2500, timerProgressBar:true});}}).withFailureHandler(function(err){Swal.fire(tr('error'), err.message||tr('errorOccurred'), 'error');}).deliverAccessoryQuantity(id, r.value);}});}
+    </script>
+    <button id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none;position:fixed;bottom:16px;left:16px;z-index:9999;background:#1e3a5f;color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;">
+      <i class="fas fa-download"></i> تثبيت التطبيق
+    </button>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function (err) { console.warn('SW registration failed', err); });
+        });
+      }
+      var deferredPwaPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        var btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.style.display = 'block';
+      });
+      function triggerPwaInstall() {
+        var btn = document.getElementById('pwaInstallBtn');
+        if (!deferredPwaPrompt) return;
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.finally(function () {
+          deferredPwaPrompt = null;
+          if (btn) btn.style.display = 'none';
+        });
+      }
+      window.addEventListener('appinstalled', function () {
+        var btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.style.display = 'none';
+      });
     </script>
 </body>
 </html>
