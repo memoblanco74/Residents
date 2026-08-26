@@ -16,8 +16,40 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// i18n(): translate a UI string via the frontend's own tr()/TR dictionary (bilingual, shared with index.html).
+function i18n(key) {
+  return (typeof window.tr === 'function') ? window.tr(key) : key;
+}
+
+// Server (Postgres RPC) exceptions raise short ASCII codes instead of Arabic text so they
+// can be translated here into whichever language the user currently has selected.
+const SERVER_ERROR_KEYS = {
+  ERR_LAST_ADMIN_ROLE: 'errLastAdminRole',
+  ERR_UNIT_NOT_FOUND: 'errUnitNotFound',
+  ERR_PASSWORD_REQUIRED: 'errPasswordRequired',
+  ERR_UNIT_PASSWORD_REQUIRED: 'errUnitPasswordRequired',
+  ERR_UNIT_EXISTS: 'errUnitExists',
+  ERR_LAST_ADMIN_DELETE: 'errLastAdminDelete',
+  ERR_REQUEST_NOT_FOUND: 'errRequestNotFound',
+  ERR_REQUEST_ALREADY_REVIEWED: 'errRequestAlreadyReviewed',
+  ERR_INVALID_QUANTITY: 'errInvalidQuantity',
+  ERR_ACCESSORY_NOT_FOUND: 'errAccessoryNotFound',
+  ERR_ALREADY_FULLY_DELIVERED: 'errAlreadyFullyDelivered'
+};
+
+function translateServerMessage(raw) {
+  if (!raw) return raw;
+  raw = String(raw);
+  const qtyMatch = raw.match(/ERR_QTY_EXCEEDS_REMAINING\|?(\d+)?/);
+  if (qtyMatch) return i18n('errQtyExceedsRemaining').replace('{n}', qtyMatch[1] || '');
+  for (const code in SERVER_ERROR_KEYS) {
+    if (raw.indexOf(code) !== -1) return i18n(SERVER_ERROR_KEYS[code]);
+  }
+  return raw;
+}
+
 function ok(error) {
-  if (error) throw new Error(error.message || String(error));
+  if (error) throw new Error(translateServerMessage(error.message || String(error)));
 }
 
 function unitLocaleCompare(a, b) {
@@ -87,7 +119,7 @@ const GAS_API = {
   },
 
   async updateAnnouncement(id, t, c) {
-    if (!t.trim() || !c.trim()) throw new Error('العنوان والنص مطلوبان');
+    if (!t.trim() || !c.trim()) throw new Error(i18n('titleAndContentRequired'));
     const { error } = await sb.from('announcements').update({ title: t.trim(), content: c.trim() }).eq('id', id);
     ok(error);
     return true;
@@ -230,7 +262,7 @@ const GAS_API = {
   // ----- payment requests ----------------------------------------------------
   async submitPaymentRequest(unit, amount, paidBy, reference) {
     const amt = parseFloat(amount) || 0;
-    if (amt <= 0 || !String(paidBy).trim() || !String(reference).trim()) throw new Error('بيانات غير مكتملة');
+    if (amt <= 0 || !String(paidBy).trim() || !String(reference).trim()) throw new Error(i18n('errIncompleteData'));
     const { error } = await sb.from('payment_requests').insert({
       unit: unit.trim(), amount: amt, paid_by: paidBy.trim(), reference: reference.trim(), status: 'pending'
     });
@@ -314,7 +346,7 @@ const GAS_API = {
 
   // ----- contacts --------------------------------------------------------------
   async addContact(name, phone, category, description) {
-    if (!name.trim() || !phone.trim()) throw new Error('الاسم والهاتف مطلوبان');
+    if (!name.trim() || !phone.trim()) throw new Error(i18n('nameAndPhoneRequired'));
     const { error } = await sb.from('contacts').insert({ name: name.trim(), phone: phone.trim(), category: (category || '').trim(), description: (description || '').trim() });
     ok(error);
     return true;
@@ -329,7 +361,7 @@ const GAS_API = {
   },
 
   async updateContact(id, name, phone, category, description) {
-    if (!name.trim() || !phone.trim()) throw new Error('الاسم والهاتف مطلوبان');
+    if (!name.trim() || !phone.trim()) throw new Error(i18n('nameAndPhoneRequired'));
     const { error } = await sb.from('contacts').update({ name: name.trim(), phone: phone.trim(), category: (category || '').trim(), description: (description || '').trim() }).eq('id', id);
     ok(error);
     return true;
@@ -342,7 +374,7 @@ const GAS_API = {
 
   // ----- tickets -----------------------------------------------------------------
   async submitTicket(unit, title, description) {
-    if (!unit.trim() || !title.trim() || !description.trim()) throw new Error('العنوان والوصف مطلوبان');
+    if (!unit.trim() || !title.trim() || !description.trim()) throw new Error(i18n('errTitleDescRequired'));
     const { error } = await sb.from('tickets').insert({ unit: unit.trim(), title: title.trim(), description: description.trim(), status: 'open' });
     ok(error);
     return true;
@@ -371,7 +403,7 @@ const GAS_API = {
   },
 
   async updateTicketStatus(id, status, adminNote) {
-    if (!['open', 'in_progress', 'resolved'].includes(status)) throw new Error('حالة غير صحيحة');
+    if (!['open', 'in_progress', 'resolved'].includes(status)) throw new Error(i18n('errInvalidStatus'));
     const { error } = await sb.from('tickets').update({
       status, admin_note: (adminNote || '').trim(), resolved_at: status === 'resolved' ? new Date().toISOString() : null
     }).eq('id', id);
@@ -388,7 +420,7 @@ const GAS_API = {
   // ----- accessories -----------------------------------------------------------
   async addAccessory(name, price) {
     const pr = parseFloat(price);
-    if (!name.trim() || isNaN(pr) || pr < 0) throw new Error('اسم القطعة والسعر مطلوبان');
+    if (!name.trim() || isNaN(pr) || pr < 0) throw new Error(i18n('nameAndPriceRequired'));
     const { error } = await sb.from('accessories').insert({ name: name.trim(), price: pr });
     ok(error);
     return true;
@@ -402,7 +434,7 @@ const GAS_API = {
 
   async updateAccessory(id, name, price) {
     const pr = parseFloat(price);
-    if (!name.trim() || isNaN(pr) || pr < 0) throw new Error('اسم القطعة والسعر مطلوبان');
+    if (!name.trim() || isNaN(pr) || pr < 0) throw new Error(i18n('nameAndPriceRequired'));
     const { error } = await sb.from('accessories').update({ name: name.trim(), price: pr }).eq('id', id);
     ok(error);
     return true;
