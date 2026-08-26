@@ -170,7 +170,7 @@
       function toggleLang(){
         currentLang = currentLang==='ar' ? 'en' : 'ar';
         localStorage.setItem('sys_lang', currentLang);
-        applyLang();
+        location.reload();
       }
 
       function initTheme(){
